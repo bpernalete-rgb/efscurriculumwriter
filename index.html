@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>EfS Curriculum Agent — IMV / La Travesía</title>
+<style>
+:root {
+  --g50:#EAF3DE;--g100:#C0DD97;--g400:#639922;--g600:#3B6D11;--g800:#27500A;
+  --a50:#FAEEDA;--a400:#BA7517;
+  --t50:#E1F5EE;--t400:#1D9E75;--t600:#0F6E56;
+  --gray0:#fff;--gray50:#F7F7F5;--gray100:#EEEDE9;--gray200:#D3D1C7;
+  --gray400:#888780;--gray600:#5F5E5A;--gray800:#2C2C2A;
+  --r: 8px;--r-lg:12px;--r-xl:16px;
+  --font:'Segoe UI',system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:var(--gray50);color:var(--gray800);min-height:100vh;}
+
+/* ── Layout ── */
+.shell{display:grid;grid-template-columns:252px 1fr;min-height:100vh;}
+
+/* ── Sidebar ── */
+.sidebar{background:var(--gray0);border-right:1px solid var(--gray100);display:flex;flex-direction:column;padding:0;}
+.sb-brand{padding:1.1rem 1rem 1rem;border-bottom:1px solid var(--gray100);display:flex;align-items:center;gap:10px;}
+.sb-leaf{width:30px;height:30px;background:var(--g50);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.sb-name{font-size:12px;font-weight:600;color:var(--g800);line-height:1.2;}
+.sb-sub{font-size:10px;color:var(--gray400);font-weight:400;}
+
+.sb-section{padding:0.6rem 0.75rem 0.25rem;font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--gray400);}
+
+.nav-btn{display:flex;align-items:flex-start;gap:9px;padding:0.5rem 0.75rem;width:100%;text-align:left;background:none;border:none;border-radius:6px;cursor:pointer;margin:1px 4px;width:calc(100% - 8px);}
+.nav-btn:hover{background:var(--gray50);}
+.nav-btn.active{background:var(--g50);}
+.nav-icon{font-size:14px;width:18px;text-align:center;flex-shrink:0;margin-top:1px;}
+.nav-label{font-size:12px;color:var(--gray600);line-height:1.3;}
+.nav-btn.active .nav-label{color:var(--g800);font-weight:500;}
+.nav-desc{font-size:10px;color:var(--gray400);margin-top:1px;line-height:1.3;}
+.nav-btn.active .nav-desc{color:var(--g600);}
+
+.sb-footer{margin-top:auto;border-top:1px solid var(--gray100);padding:0.875rem 0.75rem;}
+.sb-footer label{font-size:10px;color:var(--gray400);display:block;margin-bottom:4px;font-weight:500;}
+.sb-footer input{width:100%;padding:6px 8px;border:1px solid var(--gray200);border-radius:6px;font-size:11px;font-family:monospace;background:var(--gray50);color:var(--gray800);}
+.sb-footer input:focus{outline:2px solid var(--g400);border-color:transparent;}
+.sb-footer .hint{font-size:10px;color:var(--gray400);margin-top:4px;line-height:1.4;}
+
+/* ── Main ── */
+.main{display:flex;flex-direction:column;overflow:hidden;min-height:100vh;}
+
+.topbar{background:var(--gray0);border-bottom:1px solid var(--gray100);padding:0.8rem 1.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;}
+.tb-left{min-width:0;}
+.tb-title{font-size:14px;font-weight:600;color:var(--gray800);}
+.tb-sub{font-size:11px;color:var(--gray400);margin-top:2px;}
+.tb-stages{display:flex;gap:6px;flex-shrink:0;}
+.stage-chip{font-size:10px;padding:3px 9px;border-radius:99px;border:1px solid var(--gray200);color:var(--gray400);background:var(--gray0);white-space:nowrap;}
+.stage-chip.done{background:var(--g50);border-color:var(--g400);color:var(--g800);}
+.stage-chip.active{background:var(--g400);border-color:var(--g400);color:#fff;}
+
+/* ── Content ── */
+.content{flex:1;overflow-y:auto;padding:1.25rem;display:flex;gap:1.25rem;align-items:flex-start;}
+
+/* ── Form Panel ── */
+.form-panel{flex:0 0 300px;background:var(--gray0);border:1px solid var(--gray100);border-radius:var(--r-lg);overflow:hidden;}
+.fp-head{padding:0.875rem 1rem 0.75rem;border-bottom:1px solid var(--gray100);}
+.fp-title{font-size:13px;font-weight:600;color:var(--gray800);}
+.fp-sub{font-size:11px;color:var(--gray400);margin-top:2px;line-height:1.4;}
+.fp-body{padding:1rem;display:flex;flex-direction:column;gap:0.875rem;}
+
+.field{display:flex;flex-direction:column;gap:4px;}
+.field label{font-size:11px;font-weight:500;color:var(--gray600);}
+.field input[type=text],.field select,.field textarea{
+  padding:6px 9px;border:1px solid var(--gray200);border-radius:var(--r);
+  font-size:12px;font-family:var(--font);background:var(--gray0);color:var(--gray800);width:100%;
+}
+.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--g400);border-color:transparent;}
+.field textarea{height:60px;resize:vertical;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+
+.pills{display:flex;flex-wrap:wrap;gap:5px;}
+.pill{padding:3px 10px;border-radius:99px;border:1px solid var(--gray200);font-size:11px;color:var(--gray600);cursor:pointer;background:var(--gray0);user-select:none;}
+.pill.on{background:var(--g50);border-color:var(--g400);color:var(--g800);font-weight:500;}
+
+.info-box{background:var(--t50);border-radius:var(--r);padding:8px 10px;font-size:11px;color:var(--t600);line-height:1.5;}
+.info-box strong{font-weight:600;}
+
+.warn-box{background:var(--a50);border-radius:var(--r);padding:8px 10px;font-size:11px;color:var(--a400);line-height:1.5;}
+
+.divider{border:none;border-top:1px solid var(--gray100);margin:0.25rem 0;}
+
+.btn-generate{width:100%;padding:9px;background:var(--g400);color:#fff;border:none;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;letter-spacing:.01em;margin-top:0.25rem;}
+.btn-generate:hover{background:var(--g600);}
+.btn-generate:disabled{background:var(--gray200);cursor:not-allowed;}
+
+/* ── Output Panel ── */
+.output-panel{flex:1;display:flex;flex-direction:column;gap:0;min-width:0;}
+
+.out-card{background:var(--gray0);border:1px solid var(--gray100);border-radius:var(--r-lg);overflow:hidden;display:flex;flex-direction:column;}
+
+.out-head{padding:0.8rem 1.1rem;border-bottom:1px solid var(--gray100);display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-shrink:0;}
+.out-title{font-size:12px;font-weight:600;color:var(--gray800);}
+.out-meta{font-size:10px;color:var(--gray400);}
+.out-actions{display:flex;align-items:center;gap:6px;}
+
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--gray200);flex-shrink:0;}
+.status-dot.running{background:var(--a400);animation:pulse 1s infinite;}
+.status-dot.done{background:var(--g400);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+.out-body{
+  padding:1.1rem 1.25rem;
+  font-size:12.5px;
+  line-height:1.8;
+  color:var(--gray800);
+  white-space:pre-wrap;
+  word-break:break-word;
+  overflow-y:auto;
+  max-height:68vh;
+  flex:1;
+}
+.out-placeholder{color:var(--gray200);font-style:italic;font-size:12px;}
+
+.out-foot{padding:0.65rem 1.1rem;border-top:1px solid var(--gray100);display:flex;gap:6px;align-items:center;flex-shrink:0;}
+.btn-sm{padding:4px 12px;border-radius:var(--r);border:1px solid var(--gray200);background:var(--gray0);font-size:11px;color:var(--gray600);cursor:pointer;}
+.btn-sm:hover{background:var(--gray50);}
+.btn-next{margin-left:auto;padding:4px 12px;border-radius:var(--r);border:1px solid var(--g400);background:var(--g50);font-size:11px;color:var(--g800);font-weight:500;cursor:pointer;}
+.btn-next:hover{background:var(--g100);}
+
+/* Tab navigation for output sections */
+.section-tabs{display:flex;border-bottom:1px solid var(--gray100);overflow-x:auto;flex-shrink:0;}
+.stab{padding:0.6rem 1rem;font-size:11px;color:var(--gray400);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-1px;}
+.stab:hover{color:var(--gray600);}
+.stab.active{color:var(--g800);font-weight:500;border-bottom-color:var(--g400);}
+
+.cursor{display:inline-block;width:2px;height:1em;background:var(--g400);vertical-align:text-bottom;animation:blink .7s infinite;margin-left:2px;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+.hidden{display:none!important;}
+
+/* Section indicators in sidebar */
+.section-progress{display:flex;flex-direction:column;gap:3px;padding:0.5rem 0.75rem;}
+.prog-item{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--gray400);}
+.prog-dot{width:6px;height:6px;border-radius:50%;background:var(--gray200);flex-shrink:0;}
+.prog-dot.done{background:var(--g400);}
+.prog-dot.active{background:var(--a400);}
+
+@media(max-width:720px){
+  .shell{grid-template-columns:1fr;}
+  .sidebar{display:none;}
+  .content{flex-direction:column;}
+  .form-panel{flex:none;width:100%;}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ── Sidebar ── -->
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-leaf">🌱</div>
+    <div>
+      <div class="sb-name">EfS Curriculum Agent</div>
+      <div class="sb-sub">IMV · La Travesía · EPA Cultivating Green Champions</div>
+    </div>
+  </div>
+
+  <div class="sb-section">Pipeline</div>
+
+  <button class="nav-btn active" id="nav-design" onclick="gotoStage('design',this)">
+    <span class="nav-icon">📐</span>
+    <div>
+      <div class="nav-label">Stage 1 & 2 — Unit Design</div>
+      <div class="nav-desc">EfS standard · EU · guiding question · transfer goal · assessment evidence</div>
+    </div>
+  </button>
+
+  <button class="nav-btn" id="nav-lessons" onclick="gotoStage('lessons',this)">
+    <span class="nav-icon">📋</span>
+    <div>
+      <div class="nav-label">Stage 3 — Scripted Lessons</div>
+      <div class="nav-desc">Word-for-word facilitator scripts · dual-band tables · WHAT IF boxes</div>
+    </div>
+  </button>
+
+  <button class="nav-btn" id="nav-bilingual" onclick="gotoStage('bilingual',this)">
+    <span class="nav-icon">🌐</span>
+    <div>
+      <div class="nav-label">Bilingual Mirror</div>
+      <div class="nav-desc">Cultural adaptation into Spanish · dual-product or straight mirror</div>
+    </div>
+  </button>
+
+  <div class="sb-section" style="margin-top:.5rem;">Document sections</div>
+  <div class="section-progress" id="section-progress">
+    <div class="prog-item"><div class="prog-dot" id="pd-header"></div>Header &amp; overview table</div>
+    <div class="prog-item"><div class="prog-dot" id="pd-before"></div>Before You Teach</div>
+    <div class="prog-item"><div class="prog-dot" id="pd-s1"></div>Stage 1 — Desired Results</div>
+    <div class="prog-item"><div class="prog-dot" id="pd-s2"></div>Stage 2 — Assessment Evidence</div>
+    <div class="prog-item"><div class="prog-dot" id="pd-arc"></div>Lesson Arc Map</div>
+    <div class="prog-item"><div class="prog-dot" id="pd-lessons"></div>Stage 3 — Scripted Lessons</div>
+    <div class="prog-item"><div class="prog-dot" id="pd-appendix"></div>Student Materials Appendix</div>
+  </div>
+
+  <div class="sb-footer">
+    <label>Anthropic API Key</label>
+    <input type="password" id="api-key" placeholder="sk-ant-api03-..." />
+    <div class="hint">Your key stays in your browser and is only sent to api.anthropic.com. Get yours at console.anthropic.com.</div>
+  </div>
+</aside>
+
+<!-- ── Main ── -->
+<div class="main">
+  <div class="topbar">
+    <div class="tb-left">
+      <div class="tb-title" id="tb-title">Stage 1 & 2 — Unit Design</div>
+      <div class="tb-sub" id="tb-sub">EfS Standard · Enduring Understanding · Guiding Question · Assessment Evidence · Lesson Arc</div>
+    </div>
+    <div class="tb-stages">
+      <div class="stage-chip active" id="chip-design">1·2 Design</div>
+      <div class="stage-chip" id="chip-lessons">3 Lessons</div>
+      <div class="stage-chip" id="chip-bilingual">Bilingual</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ══════════════ DESIGN FORM ══════════════ -->
+    <div class="form-panel" id="form-design">
+      <div class="fp-head">
+        <div class="fp-title">Unit parameters</div>
+        <div class="fp-sub">The agent will produce a complete IMV-format design document — Before You Teach · Stage 1 · Stage 2 · Lesson Arc Map</div>
+      </div>
+      <div class="fp-body">
+
+        <div class="field">
+          <label>Unit topic / focus</label>
+          <input type="text" id="d-topic" placeholder="e.g. water conservation, pollinators, food waste" />
+        </div>
+
+        <div class="field">
+          <label>Grade</label>
+          <div class="pills" id="grade-pills">
+            <div class="pill" data-v="PreK" onclick="togglePill(this)">PreK</div>
+            <div class="pill on" data-v="Kinder" onclick="togglePill(this)">Kinder</div>
+            <div class="pill" data-v="1st" onclick="togglePill(this)">1st</div>
+            <div class="pill" data-v="2nd" onclick="togglePill(this)">2nd</div>
+            <div class="pill" data-v="3rd" onclick="togglePill(this)">3rd</div>
+            <div class="pill" data-v="4th" onclick="togglePill(this)">4th</div>
+            <div class="pill" data-v="5th" onclick="togglePill(this)">5th</div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>Season</label>
+            <select id="d-season">
+              <option>Fall</option>
+              <option>Spring</option>
+              <option>Winter</option>
+              <option>Any</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Lesson count</label>
+            <select id="d-lessons">
+              <option>7 (standard)</option>
+              <option>9 (K or PreK expansion)</option>
+              <option>6 (compressed)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Minutes per lesson</label>
+          <div class="pills">
+            <div class="pill" data-v="30" onclick="toggleExcl(this,'min')">30 min</div>
+            <div class="pill on" data-v="35" onclick="toggleExcl(this,'min')">35 min</div>
+            <div class="pill" data-v="45" onclick="toggleExcl(this,'min')">45 min</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Context</label>
+          <div class="pills">
+            <div class="pill on" data-v="mv" onclick="togglePill(this)">Mundo Verde internal</div>
+            <div class="pill on" data-v="epa" onclick="togglePill(this)">EPA partner schools</div>
+            <div class="pill" data-v="dashboard" onclick="togglePill(this)">Dashboard data (3–5)</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Expedition to extend or complement (optional)</label>
+          <input type="text" id="d-expedition" placeholder="e.g. Kinder Fall vegetable unit" />
+        </div>
+
+        <div class="field">
+          <label>Anchor text or community partner (optional)</label>
+          <input type="text" id="d-anchor" placeholder="e.g. What Do You Do With a Tail Like This?" />
+        </div>
+
+        <div class="field">
+          <label>Authentic audience (optional — agent will suggest if blank)</label>
+          <input type="text" id="d-audience" placeholder="e.g. 5th graders, families, city officials" />
+        </div>
+
+        <div class="field">
+          <label>Additional notes</label>
+          <textarea id="d-notes" placeholder="Specific Cloud Standard preference, ESPICA habit focus, transfer task idea..."></textarea>
+        </div>
+
+        <div class="info-box">
+          <strong>Output:</strong> Complete Stages 1 & 2 document in IMV format — EfS standard with classroom framing, EU, Guiding Question, Transfer Goal, Knowledge/Skills, ESPICA table with rationale, NGSS + CCSS alignment, Final Product + rubric, Transfer Task, Pre/Post assessment design, Data Moment, Formative Plan, and Lesson Arc Map.
+        </div>
+
+        <button class="btn-generate" id="btn-design" onclick="runDesign()">Generate Unit Design →</button>
+      </div>
+    </div>
+
+    <!-- ══════════════ LESSONS FORM ══════════════ -->
+    <div class="form-panel hidden" id="form-lessons">
+      <div class="fp-head">
+        <div class="fp-title">Stage 3 — Scripted Lessons</div>
+        <div class="fp-sub">Generates all lessons in full IMV facilitator guide format</div>
+      </div>
+      <div class="fp-body">
+
+        <div class="field">
+          <label>Source design</label>
+          <div class="pills">
+            <div class="pill on" data-v="prev" onclick="toggleExcl(this,'src')">Use Stage 1&2 I just generated</div>
+            <div class="pill" data-v="paste" onclick="toggleExcl(this,'src')">Paste my own design</div>
+          </div>
+        </div>
+
+        <div class="field" id="paste-field" style="display:none;">
+          <label>Paste your unit design here</label>
+          <textarea id="l-paste" style="height:100px;" placeholder="Paste Stage 1 & 2 design document..."></textarea>
+        </div>
+
+        <div class="field">
+          <label>Which lessons to generate</label>
+          <div class="pills">
+            <div class="pill on" data-v="all" onclick="toggleExcl(this,'which')">All lessons</div>
+            <div class="pill" data-v="single" onclick="toggleExcl(this,'which')">One specific lesson</div>
+          </div>
+        </div>
+
+        <div class="field" id="lesson-num-field" style="display:none;">
+          <label>Lesson number</label>
+          <input type="text" id="l-num" placeholder="e.g. Lesson 3" />
+        </div>
+
+        <div class="field">
+          <label>Script depth</label>
+          <div class="pills">
+            <div class="pill on" data-v="full" onclick="toggleExcl(this,'depth')">Full word-for-word scripts</div>
+            <div class="pill" data-v="outline" onclick="toggleExcl(this,'depth')">Outline + key prompts</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Include in each lesson</label>
+          <div class="pills">
+            <div class="pill on" data-v="dualband" onclick="togglePill(this)">K–2 / 3–5 dual-band tables</div>
+            <div class="pill on" data-v="whatif" onclick="togglePill(this)">WHAT IF boxes</div>
+            <div class="pill on" data-v="formative" onclick="togglePill(this)">Formative checks</div>
+            <div class="pill on" data-v="protocols" onclick="togglePill(this)">Protocol callout boxes</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Notes for this stage</label>
+          <textarea id="l-notes" placeholder="Any adjustments from the design, protocols to emphasize..."></textarea>
+        </div>
+
+        <div class="info-box">
+          <strong>Output:</strong> Every lesson with: exact facilitator script · materials list · phase segments with minute counts · dual-band K–2/3–5 tables · named protocol boxes · WHAT IF guidance · 30-second formative check. Plus whole-unit materials list and student materials appendix.
+        </div>
+
+        <button class="btn-generate" id="btn-lessons" onclick="runLessons()">Generate Scripted Lessons →</button>
+      </div>
+    </div>
+
+    <!-- ══════════════ BILINGUAL FORM ══════════════ -->
+    <div class="form-panel hidden" id="form-bilingual">
+      <div class="fp-head">
+        <div class="fp-title">Bilingual Mirror — Español</div>
+        <div class="fp-sub">Cultural adaptation, not translation. Canonical ESPICA / Cloud terminology preserved.</div>
+      </div>
+      <div class="fp-body">
+
+        <div class="field">
+          <label>Mirror type</label>
+          <div class="pills" style="flex-direction:column;gap:5px;">
+            <div class="pill on" style="border-radius:var(--r);text-align:left;padding:7px 10px;" data-v="dual" onclick="toggleExcl(this,'mirror')"><strong>Dual-product</strong> — Spanish Final Product complements English (MV default)</div>
+            <div class="pill" style="border-radius:var(--r);text-align:left;padding:7px 10px;" data-v="straight" onclick="toggleExcl(this,'mirror')"><strong>Straight mirror</strong> — same unit delivered in Spanish</div>
+            <div class="pill" style="border-radius:var(--r);text-align:left;padding:7px 10px;" data-v="seed" onclick="toggleExcl(this,'mirror')"><strong>Vocabulary seed</strong> — Spanish key terms woven into English unit</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Output format</label>
+          <div class="pills">
+            <div class="pill on" data-v="side" onclick="toggleExcl(this,'fmt')">Side-by-side bilingual</div>
+            <div class="pill" data-v="separate" onclick="toggleExcl(this,'fmt')">Spanish-only documents</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>What to mirror</label>
+          <div class="pills">
+            <div class="pill on" data-v="both" onclick="toggleExcl(this,'what')">Design + Lessons</div>
+            <div class="pill" data-v="design" onclick="toggleExcl(this,'what')">Design only</div>
+            <div class="pill" data-v="lessons" onclick="toggleExcl(this,'what')">Lessons only</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Cultural adaptation notes (optional)</label>
+          <textarea id="b-notes" placeholder="Community context, cultural references to adapt, picture book substitutions..."></textarea>
+        </div>
+
+        <div class="warn-box">
+          <strong>Note:</strong> This is adaptation, not translation. Picture book suggestions may be substituted for Spanish-language equivalents. Cultural references will be adapted. ESPICA and Cloud Standard names are canonical — they will not be re-translated.
+        </div>
+
+        <button class="btn-generate" id="btn-bilingual" onclick="runBilingual()">Generate Spanish Mirror →</button>
+      </div>
+    </div>
+
+    <!-- ══════════════ OUTPUT ══════════════ -->
+    <div class="output-panel" id="output-panel">
+      <div class="out-card">
+        <div class="out-head">
+          <div>
+            <div class="out-title" id="out-title">Output</div>
+            <div class="out-meta" id="out-meta">Fill in the form and click Generate</div>
+          </div>
+          <div class="out-actions">
+            <div class="status-dot" id="status-dot"></div>
+          </div>
+        </div>
+
+        <div class="out-body" id="out-body">
+          <span class="out-placeholder">Your complete IMV-format curriculum document will stream here. The agent generates the full document in one pass — Before You Teach, Stage 1 (EU, Guiding Question, Transfer Goal, Knowledge, Skills, ESPICA, Standards), Stage 2 (Final Product + rubric, Transfer Task, Pre/Post Assessment, Data Moment, Formative Plan), Lesson Arc Map, then Stage 3 scripted lessons with dual-band tables and WHAT IF boxes.</span>
+        </div>
+
+        <div class="out-foot" id="out-foot" style="display:none;">
+          <button class="btn-sm" onclick="copyOut()">Copy</button>
+          <button class="btn-sm" onclick="downloadOut()">Download .txt</button>
+          <button class="btn-next" id="btn-next" onclick="nextStage()">→ Next stage</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- .content -->
+</div><!-- .main -->
+</div><!-- .shell -->
+
+<script>
+// ── State ──
+let stage = 'design';
+let outputs = {design:'', lessons:'', bilingual:''};
+let running = false;
+
+// ── Pill helpers ──
+function togglePill(el){el.classList.toggle('on');}
+function toggleExcl(el,group){
+  el.closest('.pills').querySelectorAll('.pill').forEach(p=>p.classList.remove('on'));
+  el.classList.add('on');
+}
+function getOn(pillsEl){
+  return [...pillsEl.querySelectorAll('.pill.on')].map(p=>p.dataset.v||p.textContent.trim());
+}
+function getExcl(pillsEl){
+  const on=pillsEl.querySelector('.pill.on');
+  return on?(on.dataset.v||on.textContent.trim()):'';
+}
+
+// ── Toggle paste / lesson num fields ──
+document.addEventListener('click',e=>{
+  if(e.target.closest('#form-lessons')){
+    const src=getExcl(document.querySelector('#form-lessons .pills[data-group="src"]')||document.querySelector('#form-lessons .fp-body .pills'));
+    document.getElementById('paste-field').style.display=
+      e.target.dataset&&e.target.dataset.v==='paste'?'flex':'none';
+    document.getElementById('lesson-num-field').style.display=
+      e.target.dataset&&e.target.dataset.v==='single'?'flex':'none';
+  }
+});
+
+// ── Navigation ──
+function gotoStage(s,el){
+  stage=s;
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.form-panel').forEach(p=>p.classList.add('hidden'));
+  document.getElementById('form-'+s).classList.remove('hidden');
+
+  const map={
+    design:['Stage 1 & 2 — Unit Design','EfS Standard · EU · Guiding Question · Transfer Goal · Assessment Evidence · Lesson Arc Map'],
+    lessons:['Stage 3 — Scripted Lessons','Word-for-word facilitator scripts · dual-band K–2/3–5 · WHAT IF boxes · formative checks'],
+    bilingual:['Bilingual Mirror — Español','Cultural adaptation · dual-product or straight mirror · canonical ESPICA/Cloud terminology']
+  };
+  document.getElementById('tb-title').textContent=map[s][0];
+  document.getElementById('tb-sub').textContent=map[s][1];
+
+  // chips
+  ['design','lessons','bilingual'].forEach(k=>{
+    const chip=document.getElementById('chip-'+k);
+    chip.classList.remove('active','done');
+    if(k===s)chip.classList.add('active');
+    else if(outputs[k])chip.classList.add('done');
+  });
+
+  if(outputs[s]){
+    setOutput(outputs[s],true);
+    document.getElementById('out-title').textContent=stageTitles[s];
+  } else {
+    resetOutput();
+  }
+}
+
+const stageTitles={
+  design:'Unit Design — Stages 1 & 2',
+  lessons:'Facilitator Guide — Stage 3',
+  bilingual:'Bilingual Mirror — Español'
+};
+
+function nextStage(){
+  const order=['design','lessons','bilingual'];
+  const i=order.indexOf(stage);
+  if(i<order.length-1){
+    const next=order[i+1];
+    gotoStage(next,document.getElementById('nav-'+next));
+  }
+}
+
+// ── Output helpers ──
+function resetOutput(){
+  const body=document.getElementById('out-body');
+  body.innerHTML='<span class="out-placeholder">Your complete IMV-format curriculum document will stream here. The agent generates the full document in one pass — Before You Teach, Stage 1 (EU, Guiding Question, Transfer Goal, Knowledge, Skills, ESPICA, Standards), Stage 2 (Final Product + rubric, Transfer Task, Pre/Post Assessment, Data Moment, Formative Plan), Lesson Arc Map, then Stage 3 scripted lessons with dual-band tables and WHAT IF boxes.</span>';
+  document.getElementById('out-title').textContent='Output';
+  document.getElementById('out-meta').textContent='Fill in the form and click Generate';
+  document.getElementById('status-dot').className='status-dot';
+  document.getElementById('out-foot').style.display='none';
+}
+
+function setOutput(text,done){
+  const body=document.getElementById('out-body');
+  body.textContent=text;
+  if(!done){
+    const c=document.createElement('span');
+    c.className='cursor';
+    body.appendChild(c);
+  }
+  document.getElementById('out-foot').style.display=done?'flex':'none';
+  body.scrollTop=body.scrollHeight;
+}
+
+function copyOut(){
+  navigator.clipboard.writeText(outputs[stage]||'').then(()=>{
+    const b=document.querySelector('.btn-sm');
+    b.textContent='Copied!';
+    setTimeout(()=>b.textContent='Copy',1500);
+  });
+}
+
+function downloadOut(){
+  const blob=new Blob([outputs[stage]||''],{type:'text/plain'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=stage+'-efs-unit.txt';
+  a.click();
+}
+
+function markProgress(section){
+  const el=document.getElementById('pd-'+section);
+  if(el){el.className='prog-dot done';}
+}
+
+// ── API call with streaming ──
+async function callClaude(system,user,outTitle,outMeta){
+  const key=document.getElementById('api-key').value.trim();
+  if(!key){alert('Please paste your Anthropic API key in the sidebar.');return;}
+  if(running)return;
+  running=true;
+
+  document.getElementById('out-title').textContent=outTitle;
+  document.getElementById('out-meta').textContent=outMeta;
+  document.getElementById('status-dot').className='status-dot running';
+  document.getElementById('out-foot').style.display='none';
+
+  const body=document.getElementById('out-body');
+  body.textContent='';
+  const cursor=document.createElement('span');
+  cursor.className='cursor';
+  body.appendChild(cursor);
+
+  let fullText='';
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':key,
+        'anthropic-version':'2023-06-01',
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:8000,
+        stream:true,
+        system,
+        messages:[{role:'user',content:user}]
+      })
+    });
+
+    if(!resp.ok){
+      const err=await resp.json().catch(()=>({}));
+      throw new Error(err?.error?.message||'API error '+resp.status);
+    }
+
+    const reader=resp.body.getReader();
+    const dec=new TextDecoder();
+    let buf='';
+
+    while(true){
+      const{done,value}=await reader.read();
+      if(done)break;
+      buf+=dec.decode(value,{stream:true});
+      const lines=buf.split('\n');
+      buf=lines.pop();
+      for(const line of lines){
+        if(!line.startsWith('data: '))continue;
+        const d=line.slice(6).trim();
+        if(d==='[DONE]')continue;
+        try{
+          const j=JSON.parse(d);
+          if(j.type==='content_block_delta'&&j.delta?.text){
+            fullText+=j.delta.text;
+            body.textContent=fullText;
+            body.appendChild(cursor);
+            body.scrollTop=body.scrollHeight;
+          }
+        }catch{}
+      }
+    }
+
+    body.textContent=fullText;
+    outputs[stage]=fullText;
+    document.getElementById('status-dot').className='status-dot done';
+    document.getElementById('out-foot').style.display='flex';
+    document.getElementById('chip-'+stage).classList.remove('active');
+    document.getElementById('chip-'+stage).classList.add('done');
+
+  }catch(e){
+    body.textContent='⚠ Error: '+e.message+'\n\nMake sure your API key is correct and your account has API access.';
+    document.getElementById('status-dot').className='status-dot';
+  }
+  running=false;
+}
+
+// ══════════════════════════════════════════
+// STAGE 1 & 2 — UNIT DESIGN
+// ══════════════════════════════════════════
+function runDesign(){
+  const topic=document.getElementById('d-topic').value.trim();
+  if(!topic){alert('Please enter a unit topic.');return;}
+
+  const grades=getOn(document.getElementById('grade-pills')).join(', ')||'Kindergarten';
+  const season=document.getElementById('d-season').value;
+  const lessons=document.getElementById('d-lessons').value;
+  const min=getExcl(document.querySelector('#form-design .pills:nth-of-type(3)'))||'35';
+  const ctx=[...document.querySelectorAll('#form-design .pills:nth-of-type(4) .pill.on')].map(p=>p.textContent.trim()).join(', ');
+  const expedition=document.getElementById('d-expedition').value.trim();
+  const anchor=document.getElementById('d-anchor').value.trim();
+  const audience=document.getElementById('d-audience').value.trim();
+  const notes=document.getElementById('d-notes').value.trim();
+
+  const system=`You are an expert Education for Sustainability (EfS) curriculum designer for Instituto Mundo Verde (IMV), producing units for La Travesía / EPA Cultivating Green Champions dissemination.
+
+You produce complete, publication-quality curriculum design documents in the exact IMV format — the same format used in the Kinder Spring "Secrets Behind Animal Adaptations" unit. Every section must be as rich and detailed as that model.
+
+## THE IMV DOCUMENT FORMAT (follow exactly)
+
+### HEADER
+A unit info table:
+| Grade | [grade] (ages X–X) |
+| Season | [season] |
+| Lessons | [N] lessons · approximately [X] minutes each · [frequency] · [weeks] |
+| Guiding Question | [question] |
+| Final Product | [product description] |
+| Transfer Task | [transfer task name and lesson] |
+| ESPICA Habits | [Habit 1 · Habit 2 · Habit 3] |
+Then a footer: "Stage 3 of the UbD unit design for [grade] [season] · Adapted from La Travesía (Mundo Verde PCS, 2024) · Disseminated through the EPA Cultivating Green Champions grant · Instituto Mundo Verde"
+
+### BEFORE YOU TEACH: READ THIS FIRST
+- What this unit is really about (the surface topic AND the deeper concept)
+- [For K–2] What to expect from children this age on this topic
+- What to avoid (with specific examples of framing errors)
+- The anchor materials if any (books, videos)
+- A "IF YOU ONLY REMEMBER THREE THINGS" callout box with the 3 most essential facilitation principles
+
+### STAGE 1: DESIRED RESULTS
+
+**EfS Standard & Performance Indicator**
+A table box with:
+- Primary Standard name (A–I) and full Cloud Institute description
+- Performance Indicator (with which sub-indicator: Being Strategic / Values / Knowledge / Skills)
+- "How this lands in a [grade] classroom:" — a full paragraph translating the standard into classroom language with concrete student examples
+
+**Enduring Understanding**
+One EU in a centered callout box. Then a paragraph explaining why this is one EU, not several.
+
+**Guiding Question**
+Centered callout box. Then: open / provocative / returnable / age-appropriate explanation. "Post it on chart paper in Lesson 0 and leave it visible for the entire unit."
+
+**Transfer Goal**
+Callout box: "Students will be able to independently..." Then 2–3 sentences on what this means in practice and how the transfer task directly assesses it.
+
+**What Students Will Know (Knowledge)**
+Bulleted list. Includes vocabulary (introduced gradually, not all at once).
+
+**What Students Will Be Able to Do (Skills)**
+Bulleted list. Includes sentence frames for the grade band.
+
+**Community Stewardship Habits (ESPICA)**
+A 3-column table: Habit | Why it belongs in this unit | What a facilitator can say
+Then: "For non-IMV partner schools using this unit through EPA dissemination, a facilitator can describe these simply as..."
+
+**Standards Alignment**
+NGSS standards with code + description. Common Core ELA with code + description.
+
+### STAGE 2: ASSESSMENT EVIDENCE
+
+**Final Product — [Name]**
+- What students produce (specific, detailed)
+- Why this product (4 bullets: Concrete and visible / Authentic audience / Evidences the EU / Producible in time available)
+- Success Criteria — Student-Facing (5 items in a callout box, written in student voice "My...")
+- Performance Criteria — Facilitator Rubric (3-column table: Criterion | Developing | Proficient | Exemplary, 3–4 criteria)
+
+**Transfer Task — [Name]**
+- Why this animal/topic is right for transfer
+- Structure of the task (4 numbered parts in a callout box)
+- Performance Criteria table for the transfer task
+
+**Pre- and Post-Assessment**
+- The prompt (in a callout box)
+- "What growth looks like" table (pre-assessment typical/strong response vs. post-assessment typical/strong response)
+
+**Formative Assessment Plan**
+- 3-paragraph description of the running observation approach
+- Observation Checklist description
+- Per-Lesson Formative Checkpoints table: Lesson | What the check shows | Connects to
+
+**Data Moment — [Name] (Lesson [N])**
+A detailed narrative callout box with:
+- What students do (step by step)
+- Why this counts as a data moment (K–2 requirement language)
+
+### LESSON ARC MAP
+
+**Why [N] lessons, not 7**
+A paragraph explaining the rationale for the lesson count.
+
+**Arc table:**
+| # | Arc Stage | Primary EU Move | ESPICA | Formative Check |
+
+**If you must compress to [N] lessons**
+A callout box with the two clean collapse points.
+
+### DESIGN NOTES — FOR CURRICULUM TEAM
+(Labeled: *This section is designer-facing. Remove before sharing with facilitators.*)
+- Anchor material rationale
+- Authentic audience design options
+- Portability notes for EPA dissemination
+- Any other curriculum team notes
+
+---
+
+## THEORETICAL GROUNDING YOU MUST APPLY
+
+**David Sobel — Beyond Ecophobia:**
+- PreK–K–1st (ages 4–7): Stage 1 Empathy. Units invite children to bond with local, common, observable creatures and places. No endangered species. No extinction narratives. No global problems. If the unit asks children to worry, redesign. If it asks them to love, proceed.
+- 2nd–3rd (ages 7–9): Stage 2 Exploration. Extended local exploration, tangible data from school environment, regional stories. Global framing only after local bonding.
+- 4th–5th (ages 9–11): Stage 2 Exploration (late). Complex local/regional systems, community-scale action rooted in local knowledge.
+
+**Ann Pelo — A Pedagogy for Ecology:**
+- Walk the land: units return students to the same anchor place across multiple lessons
+- Learn the names: specific, local names of species and places — not generic ("a bird" → "a red-winged blackbird")
+- Embrace sensuality: early lessons include sensory investigation — touch, listen, smell, texture, temperature
+- Explore new perspectives: wonder before explanation; resist rushing to facts
+- Tell the stories: final products are stories the child authors into relationship with a place
+- The final product is a gift to a community, not a school assignment
+
+**Love before saving (both sources converge):**
+Every design decision must pass this test: does this invite love before asking for action? Does this create conditions for a child to belong to a place before asking them to protect it?
+
+## LA TRAVESÍA PATTERNS TO FOLLOW
+
+**Guiding Question syntax by grade:**
+- PreK: "How do we ___?" or "How do ___ and ___?" — relational, communal
+- Kinder: "What's up with ___?" / "Why do ___ ___?" — curious, provocative, about noticing
+- 1st–2nd: "What role do we play in ___?" / "What are the effects of ___?" — causal, impact
+- 3rd: "What are our rights and responsibilities to ___?" — rights-based, justice-oriented
+- 4th: "What happens when we ___?" / "How can we live within ___?" — critical, long-horizon
+- 5th: "How can we ensure ___?" / "How can design thinking ___?" — systemic, futures-oriented
+
+**Authentic audience by grade band:**
+- PreK–K: Families, school community, another class, 5th graders
+- 1st–2nd: School leadership, local community event, swap or fair
+- 3rd: City officials, community members (by mail or event), local nonprofits
+- 4th: School community, families, local planners or government
+- 5th: School community, civic stakeholders, younger students
+
+**Cloud Standards in use (avoid repeating same standard at same grade):**
+- A. Cultural Preservation: 3rd Spring, 4th Fall
+- B. Responsible Citizenship: Kinder Fall, 5th Fall
+- C. Dynamics of Systems: PreK Music, Kinder Spring, 1st Spring, 2nd Spring
+- D. Sustainable Economics: 1st Spring, 2nd Fall
+- E. Healthy Commons: 1st Fall, 3rd Fall, 3rd Spring
+- F. Natural Laws: 1st Spring, 2nd Spring, 3rd Spring, 4th Spring
+- G. Inventing the Future: 1st Spring, 2nd Fall, 4th Spring, 5th Fall, 5th Spring
+- H. Multiple Perspectives: PreK Trees, PreK Clothes, 3rd Fall, 4th Fall, 5th Fall
+- I. Strong Sense of Place: PreK Trees, PreK Buildings, Kinder Fall, 1st Fall, 4th Spring, 5th Spring
+
+## FORMATTING RULES
+- Use markdown headers (##, ###), tables, and callout boxes (| content | format)
+- Every callout box, table, and rubric should be as fully realized as in the Animal Adaptations model
+- The document should be 3,000–5,000 words — dense, professional, complete
+- No placeholder text like "[insert here]" — generate actual content
+- The Before You Teach section should be warm, direct, and immediately useful to a non-expert facilitator`;
+
+  const user=`Design a complete IMV-format EfS unit with these parameters:
+
+Topic: ${topic}
+Grade: ${grades}
+Season: ${season}
+Lesson structure: ${lessons} × ${min} minutes
+Context: ${ctx||'Mundo Verde internal + EPA partner schools'}
+${expedition?'Expedition to extend or complement: '+expedition:''}
+${anchor?'Anchor text/material: '+anchor:''}
+${audience?'Preferred authentic audience: '+audience:''}
+${notes?'Additional notes: '+notes:''}
+
+Produce the complete Stages 1 & 2 design document now, in full IMV format, following the Animal Adaptations model exactly. Include every section: header table · Before You Teach · Stage 1 (Standard / EU / Guiding Question / Transfer Goal / Knowledge / Skills / ESPICA / Standards) · Stage 2 (Final Product + rubric / Transfer Task / Pre-Post Assessment / Formative Plan / Data Moment) · Lesson Arc Map · Design Notes.`;
+
+  callClaude(system,user,`Unit Design — ${topic} · ${grades}`,`Generating complete Stages 1 & 2 document…`);
+}
+
+// ══════════════════════════════════════════
+// STAGE 3 — SCRIPTED LESSONS
+// ══════════════════════════════════════════
+function runLessons(){
+  const src=getExcl(document.querySelector('#form-lessons .pills'));
+  const design=src==='prev'?outputs.design:document.getElementById('l-paste').value.trim();
+  if(!design){alert('No unit design found. Complete Stage 1 & 2 first, or paste your design.');return;}
+
+  const which=document.querySelector('#form-lessons .pills:nth-of-type(2) .pill.on')?.dataset.v||'all';
+  const lessonNum=document.getElementById('l-num').value.trim();
+  const notes=document.getElementById('l-notes').value.trim();
+
+  const system=`You are an expert EfS curriculum writer for Instituto Mundo Verde (IMV), producing Stage 3 facilitator guides for La Travesía units.
+
+You write scripted, zero-prep facilitator guides that any non-expert facilitator — a paraprofessional, substitute, volunteer, or specials teacher — can pick up and deliver without a science or teaching background.
+
+## THE IMV LESSON FORMAT (follow exactly, lesson by lesson)
+
+### Lesson header block
+**LESSON [N]**
+**[Phase Name]**
+*[Keyword · Keyword · Keyword]*
+
+**⏱ [X] minutes     🗂 Prep: [X] min — [specific prep steps in imperative form]**
+
+PURPOSE: [Short paragraph. Plain English. What this lesson accomplishes and why it matters in the arc.]
+
+### Lesson body
+Each lesson has 3–5 named phase segments. Format each:
+
+**[SEGMENT NAME — ALL CAPS] ([X] MIN)**
+
+[Facilitator instructions in second person: "Gather students...", "Hold up...", "Ask..."]
+
+*"[Exact words to say — in italics and quotes]"*
+
+[More instructions if needed]
+
+*"[More exact words]"*
+
+"What students might say:" — 3–4 example student responses.
+
+"Redirect if:" — what to do if students go off-track.
+
+Then a dual-band table:
+| K–2 (Primary) | 3–5 (Stretch / Adaptation) |
+|---|---|
+| [Specific action/language for K–2] | [Specific action/language for 3–5] |
+
+For protocol steps, use a callout box:
+| PROTOCOL: [NAME] [step 1] [step 2] [step 3] |
+
+### WHAT IF box
+| WHAT IF… What if [problem]? [Solution.] What if [problem]? [Solution.] What if [problem]? [Solution.] What if [problem]? [Solution.] |
+
+### Formative check
+| ✓ FORMATIVE CHECK [What to look for. What counts as landing. What to flag.] |
+
+---
+
+## Core commitments — never compromise these
+
+1. **Script-level specific.** Not "ask students what they notice." Write: *"Take 10 seconds and just look. What do you NOTICE? Turn to the person next to you and share one thing."*
+2. **Zero-prep verifiable.** A substitute could execute it cold with the materials listed. Test this.
+3. **Plain English in facilitator-facing text.** No UbD jargon, no "Enduring Understanding" in what the facilitator reads. That work was done upstream.
+4. **What students might say.** After every open question, include 3–4 plausible student responses. Then include a "redirect if" for off-track responses.
+5. **Dual-band table in every segment.** Always exactly two columns: K–2 | 3–5.
+6. **WHAT IF box.** 4 anticipated problems per lesson, each with a specific solution — not "use your judgment."
+7. **Formative check.** Specific, 30-second, facilitator-executable. Names exactly what to look for.
+8. **Materials list at the top of each lesson.** Everything the facilitator needs, listed specifically.
+9. **Minute counts.** Every segment has a minute count. They must add up to the total lesson time.
+
+## Additional sections to include
+
+After all scripted lessons:
+
+### Whole-unit materials list
+"Most of these are single purchases or classroom supplies. The list below covers the full [N] lessons."
+Organized by category.
+
+### Student Materials Appendix
+Include descriptions of each printable:
+- Appendix A — Pre/Post Assessment Recording Sheet (with the actual template laid out)
+- Appendix B — Transfer Task Worksheet (with the actual template)
+- Appendix C — Facilitator Observation Checklist (with the actual table)
+- Appendix D — Animal/Topic Observation Cards
+- Appendix E — Adaptation/Achievement Badges (with the text)
+- Appendix F — Success Criteria Chart (poster text)
+
+## Theoretical grounding in every lesson
+
+**Pelo — sensory before cognitive:** Opening activities must engage senses, not just eyes. Touch, listen, smell.
+**Pelo — naming:** Use specific local names, not generic ("the red-winged blackbird" not "a bird").
+**Sobel — wonder before explanation:** Never explain before children have wondered. Hold the mystery.
+**Sobel — love before saving:** Action and products emerge from what children have come to love, not from problems they were told to worry about.
+**Lesson 1:** Opens with wonder or sensory encounter, not information delivery.
+**Lessons 2–3:** Students spend time with a specific, local, real thing.
+**Lesson 4 (Data):** Tangible, visible, embodied for K–2. Never a dashboard for PreK–2.
+**Lesson 5 (Reflection):** Space to articulate what they now love or care about before being asked what to do.
+**Lesson 6 (Action):** Product arises from love and knowledge, not alarm.
+**Lesson 7 (Final):** Product is a gift to a community, not a school assignment.`;
+
+  const which_str=which==='single'&&lessonNum?`Generate only ${lessonNum} in full detail.`:`Generate ALL lessons from the arc map in full detail.`;
+
+  const user=`Here is the Stage 1 & 2 unit design:
+
+---
+${design}
+---
+
+${which_str}
+
+${notes?'Notes for this stage: '+notes:''}
+
+Write every lesson in full IMV format: segment headers with minute counts · exact facilitator scripts in italics · "What students might say" after every open question · dual-band K–2/3–5 tables · protocol callout boxes · WHAT IF box with 4 problems · 30-second formative check. Then include the whole-unit materials list and full student materials appendix with actual templates (Appendices A–F).`;
+
+  callClaude(system,user,`Scripted Lessons — Stage 3`,`Generating full facilitator guide with scripted lessons…`);
+}
+
+// ══════════════════════════════════════════
+// BILINGUAL MIRROR
+// ══════════════════════════════════════════
+function runBilingual(){
+  const src=outputs.lessons||outputs.design;
+  if(!src){alert('No content to mirror yet. Please generate Stage 1 & 2 and/or Stage 3 first.');return;}
+
+  const mirror=document.querySelector('#form-bilingual .pills:nth-of-type(1) .pill.on')?.dataset.v||'dual';
+  const fmt=document.querySelector('#form-bilingual .pills:nth-of-type(2) .pill.on')?.dataset.v||'side';
+  const what=document.querySelector('#form-bilingual .pills:nth-of-type(3) .pill.on')?.dataset.v||'both';
+  const notes=document.getElementById('b-notes').value.trim();
+
+  const system=`You are an expert bilingual EfS curriculum adapter for Instituto Mundo Verde (IMV). You produce the Spanish version of EfS units following IMV's language liberation principle — this is cultural adaptation, not translation.
+
+## Canonical terminology — NEVER re-translate these
+Use these established forms exactly:
+- ESPICA (already Spanish — do not translate the acronym)
+- La Travesía, Expedición, Celebración de Aprendizaje
+- Bienes Comunes, Comunes (for "commons")
+- ESPICA habits in Spanish: Empatía, (Expresar Su) Verdad, Perseverancia, Investigación, Colaboración, Apreciación
+- Cloud Standards in Spanish: use established IMV translations, not fresh translations
+- BBK → "Creación de conocimiento de fondo"
+- Jigsaw → "Rompecabezas"
+- Notice/Wonder → "Observar/Preguntarse"
+- Gallery Walk → "Galería de aprendizaje"
+
+## Mirror types
+- **Dual-product:** Spanish Final Product complements English (for MV dual-language classrooms). Students in the Spanish classroom produce a culturally specific artifact — not a translation of the English product. (Example from La Travesía 3rd grade water: English = persuasive speeches to city officials; Spanish = informational postcards with scientific drawings mailed to community members.)
+- **Straight mirror:** Same unit, same product, Spanish delivery.
+- **Vocabulary seed:** Mostly English unit with Spanish key terms and sentence stems woven in.
+
+## Cultural adaptation principles
+- Picture books: if the English anchor text has no Spanish edition, substitute a comparable Spanish-language text
+- Food/garden examples: adapt to Latinx cultural context (cilantro, nopal, calabaza land immediately; "lima beans" may not)
+- Civic references: "Town Hall" → "Asamblea Pública"
+- Kinship/community language: Spanish conventions carry warmth English loses ("nuestra comunidad," "nuestras familias")
+- Formality: use "tú" for facilitators (warm, direct); not "usted"
+- The facilitator script must be as accessible as the English version — same script-level specificity
+
+## Output format
+- Side-by-side: English on left, Spanish on right — every heading, every script, every note mirrored
+- Spanish-only: full parallel document in Spanish
+
+## Developmental grounding (same principles apply in Spanish)
+- Pelo: sensory before cognitive; specific local names in Spanish; final product is a gift to a community
+- Sobel: developmental stage gates apply regardless of language; love before saving
+- Don't add content not in the source; adaptation ≠ expansion`;
+
+  const mirrorLabel={dual:'dual-product',straight:'straight mirror',seed:'vocabulary seed'}[mirror]||'dual-product';
+  const fmtLabel={side:'side-by-side bilingual',separate:'Spanish-only documents'}[fmt]||'side-by-side';
+  const whatLabel={both:'design document + all lessons',design:'design document only',lessons:'lesson scripts only'}[what]||'both';
+
+  const user=`Here is the English EfS unit content to mirror into Spanish:
+
+---
+${src}
+---
+
+Mirror type: ${mirrorLabel}
+Output format: ${fmtLabel}
+Content to mirror: ${whatLabel}
+${notes?'Cultural adaptation notes: '+notes:''}
+
+Produce the full Spanish bilingual mirror now. Adapt (don't just translate) where culture matters — picture books, food references, civic language, authentic audience framing. Preserve all structural depth — lesson by lesson, segment by segment, protocol by protocol. Write the facilitator script in natural, accessible Spanish that a non-expert Spanish-speaking paraprofessional can deliver cold.`;
+
+  callClaude(system,user,`Bilingual Mirror — Español`,`Generating Spanish cultural adaptation…`);
+}
+</script>
+</body>
+</html>

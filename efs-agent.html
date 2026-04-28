@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EfS Curriculum Agent — IMV / La Travesía</title>
+<style>
+  :root {
+    --green-50: #EAF3DE;
+    --green-100: #C0DD97;
+    --green-400: #639922;
+    --green-600: #3B6D11;
+    --green-800: #27500A;
+    --amber-50: #FAEEDA;
+    --amber-400: #BA7517;
+    --teal-50: #E1F5EE;
+    --teal-400: #1D9E75;
+    --gray-50: #F7F7F5;
+    --gray-100: #EDEDE9;
+    --gray-300: #C8C8C0;
+    --gray-500: #888780;
+    --gray-700: #444441;
+    --gray-900: #1A1A18;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    background: var(--gray-50);
+    color: var(--gray-900);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* ── Layout ── */
+  .app {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: 100vh;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    background: #fff;
+    border-right: 1px solid var(--gray-100);
+    padding: 1.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 0.5rem 1.25rem;
+    border-bottom: 1px solid var(--gray-100);
+    margin-bottom: 0.75rem;
+  }
+
+  .logo-leaf {
+    width: 32px; height: 32px;
+    background: var(--green-50);
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+
+  .logo-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--green-800);
+    line-height: 1.2;
+  }
+  .logo-sub { font-size: 11px; font-weight: 400; color: var(--gray-500); }
+
+  .nav-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--gray-500);
+    padding: 0.5rem 0.5rem 0.25rem;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0.55rem 0.75rem;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    color: var(--gray-700);
+    cursor: pointer;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    transition: background 0.1s;
+  }
+  .nav-item:hover { background: var(--gray-50); }
+  .nav-item.active {
+    background: var(--green-50);
+    color: var(--green-800);
+    font-weight: 500;
+  }
+  .nav-item .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+  .nav-badge {
+    margin-left: auto;
+    font-size: 10px;
+    background: var(--green-100);
+    color: var(--green-800);
+    padding: 1px 7px;
+    border-radius: 99px;
+    font-weight: 500;
+  }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid var(--gray-100);
+  }
+
+  .api-field label {
+    font-size: 11px;
+    color: var(--gray-500);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .api-field input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    background: var(--gray-50);
+    color: var(--gray-900);
+    font-family: monospace;
+  }
+  .api-field input:focus { outline: 2px solid var(--green-400); border-color: transparent; }
+
+  /* ── Main ── */
+  .main {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .topbar {
+    background: #fff;
+    border-bottom: 1px solid var(--gray-100);
+    padding: 0.875rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .topbar-title { font-size: 15px; font-weight: 500; color: var(--gray-900); }
+  .topbar-sub { font-size: 12px; color: var(--gray-500); margin-top: 1px; }
+
+  .stage-pills {
+    display: flex;
+    gap: 6px;
+  }
+  .stage-pill {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 99px;
+    border: 1px solid var(--gray-300);
+    color: var(--gray-500);
+    background: #fff;
+  }
+  .stage-pill.done {
+    background: var(--green-50);
+    border-color: var(--green-400);
+    color: var(--green-800);
+  }
+
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+  }
+
+  /* ── Form panel ── */
+  .form-panel {
+    flex: 0 0 340px;
+    background: #fff;
+    border: 1px solid var(--gray-100);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  .panel-head {
+    padding: 1rem 1.25rem 0.75rem;
+    border-bottom: 1px solid var(--gray-100);
+  }
+  .panel-head-title { font-size: 14px; font-weight: 600; color: var(--gray-900); }
+  .panel-head-sub { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
+
+  .panel-body { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
+
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 12px; font-weight: 500; color: var(--gray-700); }
+
+  .field input[type="text"],
+  .field select,
+  .field textarea {
+    padding: 7px 10px;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-family: var(--font);
+    background: #fff;
+    color: var(--gray-900);
+    width: 100%;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: 2px solid var(--green-400);
+    border-color: transparent;
+  }
+  .field textarea { height: 64px; resize: vertical; }
+
+  .pill-group { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill {
+    padding: 4px 12px;
+    border-radius: 99px;
+    border: 1px solid var(--gray-300);
+    font-size: 12px;
+    color: var(--gray-700);
+    cursor: pointer;
+    background: #fff;
+    user-select: none;
+    transition: all 0.1s;
+  }
+  .pill.on { background: var(--green-50); border-color: var(--green-400); color: var(--green-800); font-weight: 500; }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .btn-run {
+    width: 100%;
+    padding: 10px;
+    background: var(--green-400);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.01em;
+    transition: background 0.15s;
+    margin-top: 0.25rem;
+  }
+  .btn-run:hover { background: var(--green-600); }
+  .btn-run:disabled { background: var(--gray-300); cursor: not-allowed; }
+
+  /* ── Output panel ── */
+  .output-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+  }
+
+  .output-card {
+    background: #fff;
+    border: 1px solid var(--gray-100);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  .output-head {
+    padding: 0.875rem 1.25rem;
+    border-bottom: 1px solid var(--gray-100);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .output-head-title { font-size: 13px; font-weight: 600; color: var(--gray-900); }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--gray-300);
+  }
+  .status-dot.running { background: var(--amber-400); animation: pulse 1s infinite; }
+  .status-dot.done { background: var(--green-400); }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .output-body {
+    padding: 1.25rem;
+    font-size: 13px;
+    line-height: 1.75;
+    color: var(--gray-700);
+    min-height: 120px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .output-placeholder {
+    color: var(--gray-300);
+    font-style: italic;
+    font-size: 13px;
+  }
+
+  .output-foot {
+    padding: 0.75rem 1.25rem;
+    border-top: 1px solid var(--gray-100);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .btn-copy, .btn-download {
+    padding: 5px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--gray-300);
+    background: #fff;
+    font-size: 12px;
+    color: var(--gray-700);
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .btn-copy:hover, .btn-download:hover { background: var(--gray-50); }
+
+  .btn-next {
+    margin-left: auto;
+    padding: 5px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--green-400);
+    background: var(--green-50);
+    font-size: 12px;
+    color: var(--green-800);
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .btn-next:hover { background: var(--green-100); }
+
+  .info-strip {
+    background: var(--teal-50);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #085041;
+    line-height: 1.6;
+  }
+  .info-strip strong { font-weight: 600; }
+
+  /* Streaming cursor */
+  .cursor { display: inline-block; width: 2px; height: 1em; background: var(--green-400); vertical-align: text-bottom; animation: blink 0.7s infinite; margin-left: 2px; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* ── Tabs for stages ── */
+  .hidden { display: none !important; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .content { flex-direction: column; }
+    .form-panel { flex: none; width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-leaf">🌱</div>
+      <div>
+        <div class="logo-text">EfS Curriculum Agent</div>
+        <div class="logo-sub">IMV / La Travesía</div>
+      </div>
+    </div>
+
+    <div class="nav-label">Pipeline</div>
+    <button class="nav-item active" onclick="gotoStage('ubd', this)">
+      <span class="nav-icon">📐</span> UbD Unit Design
+      <span class="nav-badge" id="badge-ubd">Stage 1</span>
+    </button>
+    <button class="nav-item" onclick="gotoStage('lessons', this)">
+      <span class="nav-icon">📋</span> Facilitator Lessons
+      <span class="nav-badge" id="badge-lessons">Stage 2</span>
+    </button>
+    <button class="nav-item" onclick="gotoStage('bilingual', this)">
+      <span class="nav-icon">🌐</span> Bilingual Mirror
+      <span class="nav-badge" id="badge-bilingual">Stage 3</span>
+    </button>
+
+    <div class="nav-label" style="margin-top:1rem;">Settings</div>
+    <div class="api-field" style="padding: 0 0.5rem;">
+      <label>Anthropic API Key</label>
+      <input type="password" id="api-key" placeholder="sk-ant-..." />
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title" id="topbar-title">Stage 1 — UbD Unit Design</div>
+        <div class="topbar-sub" id="topbar-sub">Define the intellectual architecture of your EfS unit</div>
+      </div>
+      <div class="stage-pills">
+        <div class="stage-pill" id="pill-ubd">1 · Design</div>
+        <div class="stage-pill" id="pill-lessons">2 · Lessons</div>
+        <div class="stage-pill" id="pill-bilingual">3 · Bilingual</div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ═══════════════════ STAGE 1: UbD ═══════════════════ -->
+      <div class="form-panel" id="form-ubd">
+        <div class="panel-head">
+          <div class="panel-head-title">Unit parameters</div>
+          <div class="panel-head-sub">Fill in the details — Claude will handle the rest</div>
+        </div>
+        <div class="panel-body">
+
+          <div class="field">
+            <label>Topic / focus area</label>
+            <input type="text" id="ubd-topic" placeholder="e.g. water conservation, pollinators, food waste" />
+          </div>
+
+          <div class="field">
+            <label>Grade band</label>
+            <div class="pill-group" id="grade-pills">
+              <div class="pill" data-val="PreK" onclick="togglePill(this)">PreK</div>
+              <div class="pill on" data-val="K" onclick="togglePill(this)">K</div>
+              <div class="pill on" data-val="1st" onclick="togglePill(this)">1st</div>
+              <div class="pill on" data-val="2nd" onclick="togglePill(this)">2nd</div>
+              <div class="pill on" data-val="3rd" onclick="togglePill(this)">3rd</div>
+              <div class="pill on" data-val="4th" onclick="togglePill(this)">4th</div>
+              <div class="pill on" data-val="5th" onclick="togglePill(this)">5th</div>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label>Lessons</label>
+              <select id="ubd-lessons">
+                <option value="7">7 lessons (standard)</option>
+                <option value="6">6 lessons</option>
+                <option value="5">5 (mini-unit)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Minutes / lesson</label>
+              <select id="ubd-minutes">
+                <option>30 min</option>
+                <option selected>45 min</option>
+                <option>60 min</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Season</label>
+            <div class="pill-group">
+              <div class="pill on" data-val="any" onclick="toggleExclusive(this, 'season')">Any</div>
+              <div class="pill" data-val="Fall" onclick="toggleExclusive(this, 'season')">Fall</div>
+              <div class="pill" data-val="Winter" onclick="toggleExclusive(this, 'season')">Winter</div>
+              <div class="pill" data-val="Spring" onclick="toggleExclusive(this, 'season')">Spring</div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Context</label>
+            <div class="pill-group">
+              <div class="pill on" data-val="mv" onclick="togglePill(this)">Mundo Verde internal</div>
+              <div class="pill on" data-val="epa" onclick="togglePill(this)">EPA partner schools</div>
+              <div class="pill" data-val="dashboard" onclick="togglePill(this)">Dashboard data available</div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Expedition to extend (optional)</label>
+            <input type="text" id="ubd-expedition" placeholder="e.g. 3rd grade water expedition" />
+          </div>
+
+          <div class="field">
+            <label>Additional notes (optional)</label>
+            <textarea id="ubd-notes" placeholder="Specific Cloud Standard, community partner, authentic audience..."></textarea>
+          </div>
+
+          <button class="btn-run" id="btn-ubd" onclick="runUbD()">Generate UbD Design →</button>
+        </div>
+      </div>
+
+      <!-- ═══════════════════ STAGE 2: Lessons ═══════════════════ -->
+      <div class="form-panel hidden" id="form-lessons">
+        <div class="panel-head">
+          <div class="panel-head-title">Facilitator lesson options</div>
+          <div class="panel-head-sub">Scripted, zero-prep lessons from the UbD design</div>
+        </div>
+        <div class="panel-body">
+
+          <div class="field">
+            <label>Script depth</label>
+            <div class="pill-group">
+              <div class="pill on" data-val="full" onclick="toggleExclusive(this, 'depth')">Full word-for-word scripts</div>
+              <div class="pill" data-val="outline" onclick="toggleExclusive(this, 'depth')">Outline + key prompts</div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Differentiation</label>
+            <div class="pill-group">
+              <div class="pill on" data-val="dual" onclick="togglePill(this)">K–2 / 3–5 dual-band tables</div>
+              <div class="pill on" data-val="whatif" onclick="togglePill(this)">"What if" guidance boxes</div>
+              <div class="pill on" data-val="formative" onclick="togglePill(this)">Formative checks</div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Protocols to emphasize (optional)</label>
+            <input type="text" id="lessons-protocols" placeholder="e.g. Jigsaw, Notice/Wonder, I-Poem" />
+          </div>
+
+          <div class="info-strip">
+            <strong>Input:</strong> Uses the UbD design generated in Stage 1. If you skipped Stage 1, paste your own design in the notes below.
+          </div>
+
+          <div class="field">
+            <label>Custom UbD design (if not from Stage 1)</label>
+            <textarea id="lessons-custom" placeholder="Paste your UbD design here if you have one..." style="height:90px;"></textarea>
+          </div>
+
+          <button class="btn-run" id="btn-lessons" onclick="runLessons()">Generate Facilitator Guide →</button>
+        </div>
+      </div>
+
+      <!-- ═══════════════════ STAGE 3: Bilingual ═══════════════════ -->
+      <div class="form-panel hidden" id="form-bilingual">
+        <div class="panel-head">
+          <div class="panel-head-title">Spanish bilingual mirror</div>
+          <div class="panel-head-sub">Cultural adaptation, not just translation</div>
+        </div>
+        <div class="panel-body">
+
+          <div class="field">
+            <label>Mirror type</label>
+            <div class="pill-group" style="flex-direction:column; gap:6px;">
+              <div class="pill on" style="border-radius:8px; text-align:left; padding:8px 12px;" data-val="dual" onclick="toggleExclusive(this, 'mirror')">
+                <strong>Dual-product</strong> — Spanish Final Product complements English (MV default)
+              </div>
+              <div class="pill" style="border-radius:8px; text-align:left; padding:8px 12px;" data-val="straight" onclick="toggleExclusive(this, 'mirror')">
+                <strong>Straight mirror</strong> — same unit delivered in Spanish
+              </div>
+              <div class="pill" style="border-radius:8px; text-align:left; padding:8px 12px;" data-val="seed" onclick="toggleExclusive(this, 'mirror')">
+                <strong>Vocabulary seed</strong> — Spanish terms woven into English unit
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Output format</label>
+            <div class="pill-group">
+              <div class="pill on" data-val="sidebyside" onclick="toggleExclusive(this, 'format')">Side-by-side bilingual</div>
+              <div class="pill" data-val="separate" onclick="toggleExclusive(this, 'format')">Spanish-only documents</div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Cultural adaptation notes (optional)</label>
+            <textarea id="bilingual-notes" placeholder="Specific community context, cultural references to preserve or adapt..."></textarea>
+          </div>
+
+          <button class="btn-run" id="btn-bilingual" onclick="runBilingual()">Generate Spanish Mirror →</button>
+        </div>
+      </div>
+
+      <!-- Output panel -->
+      <div class="output-panel">
+        <div class="output-card">
+          <div class="output-head">
+            <div class="output-head-title" id="output-title">Output will appear here</div>
+            <div class="status-dot" id="status-dot"></div>
+          </div>
+          <div class="output-body" id="output-body">
+            <span class="output-placeholder">Fill in the form and click Generate to start building your EfS unit. The agent will stream its response here in real time.</span>
+          </div>
+          <div class="output-foot" id="output-foot" style="display:none;">
+            <button class="btn-copy" onclick="copyOutput()">Copy text</button>
+            <button class="btn-download" onclick="downloadOutput()">Download .txt</button>
+            <button class="btn-next" id="btn-next-stage" onclick="nextStage()">→ Next stage</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── State ──
+  let currentStage = 'ubd';
+  let outputs = { ubd: '', lessons: '', bilingual: '' };
+  let running = false;
+
+  // ── Navigation ──
+  function gotoStage(stage, el) {
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    currentStage = stage;
+
+    document.querySelectorAll('.form-panel').forEach(p => p.classList.add('hidden'));
+    document.getElementById('form-' + stage).classList.remove('hidden');
+
+    const titles = {
+      ubd: ['Stage 1 — UbD Unit Design', 'Define the intellectual architecture of your EfS unit'],
+      lessons: ['Stage 2 — Facilitator Lessons', 'Generate scripted, zero-prep lessons from your UbD design'],
+      bilingual: ['Stage 3 — Bilingual Mirror', 'Culturally adapt your unit into Spanish']
+    };
+    document.getElementById('topbar-title').textContent = titles[stage][0];
+    document.getElementById('topbar-sub').textContent = titles[stage][1];
+
+    const saved = outputs[stage];
+    if (saved) {
+      setOutput(saved, true);
+    } else {
+      resetOutput();
+    }
+  }
+
+  function nextStage() {
+    const order = ['ubd', 'lessons', 'bilingual'];
+    const i = order.indexOf(currentStage);
+    if (i < order.length - 1) {
+      const nextBtn = document.querySelectorAll('.nav-item')[i + 1];
+      gotoStage(order[i + 1], nextBtn);
+    }
+  }
+
+  // ── Pill helpers ──
+  function togglePill(el) {
+    el.classList.toggle('on');
+  }
+
+  function toggleExclusive(el, group) {
+    el.closest('.pill-group').querySelectorAll('.pill').forEach(p => p.classList.remove('on'));
+    el.classList.add('on');
+  }
+
+  function getActivePills(containerId) {
+    return [...document.getElementById(containerId).querySelectorAll('.pill.on')]
+      .map(p => p.dataset.val || p.textContent.trim());
+  }
+
+  function getExclusive(groupEl) {
+    const on = groupEl.querySelector('.pill.on');
+    return on ? (on.dataset.val || on.textContent.trim()) : null;
+  }
+
+  // ── Output helpers ──
+  function resetOutput() {
+    document.getElementById('output-body').innerHTML = '<span class="output-placeholder">Fill in the form and click Generate to start building your EfS unit. The agent will stream its response here in real time.</span>';
+    document.getElementById('output-title').textContent = 'Output will appear here';
+    document.getElementById('status-dot').className = 'status-dot';
+    document.getElementById('output-foot').style.display = 'none';
+  }
+
+  function setOutput(text, done) {
+    const body = document.getElementById('output-body');
+    body.textContent = text;
+    if (!done) {
+      const cursor = document.createElement('span');
+      cursor.className = 'cursor';
+      body.appendChild(cursor);
+    }
+    document.getElementById('output-foot').style.display = done ? 'flex' : 'none';
+    body.scrollTop = body.scrollHeight;
+  }
+
+  function copyOutput() {
+    navigator.clipboard.writeText(outputs[currentStage] || '').then(() => {
+      const btn = document.querySelector('.btn-copy');
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy text', 1500);
+    });
+  }
+
+  function downloadOutput() {
+    const blob = new Blob([outputs[currentStage] || ''], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = currentStage + '-output.txt';
+    a.click();
+  }
+
+  // ── API call with streaming ──
+  async function callClaude(systemPrompt, userPrompt) {
+    const key = document.getElementById('api-key').value.trim();
+    if (!key) {
+      alert('Please enter your Anthropic API key in the sidebar.');
+      return;
+    }
+
+    running = true;
+    const dot = document.getElementById('status-dot');
+    dot.className = 'status-dot running';
+    document.getElementById('output-foot').style.display = 'none';
+
+    const body = document.getElementById('output-body');
+    body.textContent = '';
+    const cursor = document.createElement('span');
+    cursor.className = 'cursor';
+    body.appendChild(cursor);
+
+    let fullText = '';
+
+    try {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': key,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 4096,
+          stream: true,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userPrompt }]
+        })
+      });
+
+      if (!resp.ok) {
+        const err = await resp.json();
+        throw new Error(err.error?.message || 'API error ' + resp.status);
+      }
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') continue;
+          try {
+            const json = JSON.parse(data);
+            if (json.type === 'content_block_delta' && json.delta?.text) {
+              fullText += json.delta.text;
+              body.textContent = fullText;
+              body.appendChild(cursor);
+              body.scrollTop = body.scrollHeight;
+            }
+          } catch {}
+        }
+      }
+
+      // Done
+      body.textContent = fullText;
+      outputs[currentStage] = fullText;
+      dot.className = 'status-dot done';
+      document.getElementById('output-foot').style.display = 'flex';
+
+      // Mark pill done
+      const pillMap = { ubd: 'pill-ubd', lessons: 'pill-lessons', bilingual: 'pill-bilingual' };
+      document.getElementById(pillMap[currentStage]).classList.add('done');
+
+    } catch (e) {
+      body.textContent = '⚠ Error: ' + e.message;
+      dot.className = 'status-dot';
+    }
+
+    running = false;
+  }
+
+  // ── Stage 1: UbD ──
+  function runUbD() {
+    if (running) return;
+    const topic = document.getElementById('ubd-topic').value.trim();
+    if (!topic) { alert('Please enter a topic.'); return; }
+
+    const grades = getActivePills('grade-pills').join(', ');
+    const lessons = document.getElementById('ubd-lessons').value;
+    const minutes = document.getElementById('ubd-minutes').value;
+    const season = getExclusive(document.querySelector('#form-ubd .pill-group:nth-of-type(3)'));
+    const expedition = document.getElementById('ubd-expedition').value.trim();
+    const notes = document.getElementById('ubd-notes').value.trim();
+    const contextPills = [...document.querySelectorAll('#form-ubd .pill-group:nth-of-type(4) .pill.on')].map(p => p.textContent.trim()).join(', ');
+
+    document.getElementById('output-title').textContent = 'UbD Unit Design — ' + topic;
+
+    const system = `You are an expert Education for Sustainability (EfS) curriculum designer working within the Instituto Mundo Verde (IMV) / La Travesía framework. You design UbD (Understanding by Design) units for K–5 classrooms using the Cloud Institute's EfS standards.
+
+Core design rules you always follow:
+- ONE Enduring Understanding per unit (from the Cloud Institute's 12 EUs)
+- ONE primary Cloud Standard (from the 9 Cloud Standards), one optional secondary
+- ONE Guiding Question — student-facing, open, provocative, returnable across all lessons
+- Final Product must be concrete, visible, with an authentic audience
+- Transfer Goal: what students independently do with the understanding in a new context
+- ESPICA habits (Empatía, (Expresar Su) Verdad, Perseverancia, Investigación, Colaboración, Apreciación) — name 2–3 that naturally surface
+- For PreK–2: data is always tangible/visible/manual (never a dashboard)
+- For 3–5: campus dashboard data (water, energy, waste) can be used if available
+- Units must work for facilitators who are NOT trained teachers (zero jargon in delivery)
+- For EPA partner school dissemination: make ESPICA optional to name explicitly; keep standards alignment explicit
+
+Output format: A structured UbD design document with these sections:
+1. Unit Overview (grade band, topic, Cloud Standard, Enduring Understanding, Guiding Question)
+2. Transfer Goal
+3. Final Product + Authentic Audience + Success Criteria (3–5 student-facing)
+4. Data Moment plan (Lesson 4)
+5. ESPICA Habits selected (2–3) with rationale
+6. Lesson-by-lesson alignment table (Lesson | Arc Stage | EU Move | ESPICA)
+7. Suggested hook for Lesson 1
+8. Multiple perspectives to explore in Lesson 2
+9. Pre/post assessment format
+
+Write in a clear, professional tone. This document will be reviewed by the IMV curriculum team and disseminated to partner schools.`;
+
+    const user = `Design a new EfS UbD unit with these parameters:
+
+Topic: ${topic}
+Grade band: ${grades || 'K–5'}
+Lessons: ${lessons} × ${minutes}
+Season: ${season && season !== 'any' ? season : 'Any'}
+Context: ${contextPills || 'Mundo Verde internal + EPA partner schools'}
+${expedition ? 'Extend or complement: ' + expedition : ''}
+${notes ? 'Additional notes: ' + notes : ''}
+
+Please produce the full UbD Stage 1–2 design document now.`;
+
+    callClaude(system, user);
+  }
+
+  // ── Stage 2: Lessons ──
+  function runLessons() {
+    if (running) return;
+
+    const custom = document.getElementById('lessons-custom').value.trim();
+    const ubdDesign = outputs.ubd || custom;
+    if (!ubdDesign) {
+      alert('No UbD design found. Please complete Stage 1 first, or paste your design in the custom field.');
+      return;
+    }
+
+    const protocols = document.getElementById('lessons-protocols').value.trim();
+    document.getElementById('output-title').textContent = 'Facilitator Guide — scripted lessons';
+
+    const system = `You are an expert EfS curriculum writer for Instituto Mundo Verde (IMV). You write scripted facilitator guides that zero-prep facilitators (paraprofessionals, substitutes, volunteers) can deliver without being trained teachers.
+
+Core commitments:
+- Script-level specific: write exact words for the facilitator to say (italicized in quotes)
+- Zero-prep verifiable: a substitute could execute this cold with only the materials listed
+- Plain English: no UbD jargon, no "Enduring Understanding" language in facilitator-facing text
+- Built-in "what if" guidance for each lesson (3–5 anticipated problems per lesson)
+- Formative check at the end of each lesson (something a facilitator can do in 30 seconds)
+- Dual-band K–2 / 3–5 differentiation table in every lesson segment
+- The 6-lesson arc: Lesson 1 The Beginning · Lesson 2 Discovery · Lesson 3 Reflection · Lesson 4 Data · Lesson 5 Action · Lesson 6 Assessment & Celebration
+
+Lesson structure (repeat for each of 6 lessons):
+- Lesson number + phase name + italic subtitle (three keywords joined by middots)
+- PURPOSE block (short paragraph)
+- Total time + Prep line
+- 3–5 phase segments each with: ALL CAPS segment label + minute count, dual-band K–2/3–5 table, protocol callout box if a named protocol is used
+- WHAT IF box (3–5 anticipated problems)
+- Formative check
+
+Write the full facilitator voice in second person for instructions, first person (in quotes) for what to say aloud.`;
+
+    const user = `Here is the UbD unit design to turn into scripted facilitator lessons:
+
+---
+${ubdDesign}
+---
+
+Write all 6 scripted facilitator lessons now, following the shell structure exactly.
+${protocols ? 'Protocols to emphasize: ' + protocols : ''}
+Include dual K–2 / 3–5 differentiation tables in every segment, WHAT IF boxes, and formative checks.`;
+
+    callClaude(system, user);
+  }
+
+  // ── Stage 3: Bilingual ──
+  function runBilingual() {
+    if (running) return;
+
+    const guide = outputs.lessons || outputs.ubd;
+    if (!guide) {
+      alert('No English content found. Please complete Stages 1 and 2 first.');
+      return;
+    }
+
+    const mirrorType = getExclusive(document.querySelector('#form-bilingual .pill-group:nth-of-type(1)'));
+    const format = getExclusive(document.querySelector('#form-bilingual .pill-group:nth-of-type(2)'));
+    const notes = document.getElementById('bilingual-notes').value.trim();
+
+    document.getElementById('output-title').textContent = 'Spanish Bilingual Mirror';
+
+    const system = `You are an expert bilingual EfS curriculum adapter for Instituto Mundo Verde (IMV). You produce Spanish versions of EfS units following IMV's language liberation principle — this is cultural adaptation, not translation.
+
+Key principles:
+- Canonical terminology must match established MV/Cloud Spanish forms: ESPICA (these are already Spanish), La Travesía, Bienes Comunes, Comunes, Expedición, Celebración de Aprendizaje
+- NEVER freshly translate protocol names — use established MV Spanish: BBK → Creación de conocimiento de fondo, Jigsaw → Rompecabezas
+- Adapt cultural references: picture books that don't exist in Spanish need Spanish-language substitutes; food/garden examples should land in Latinx cultural context
+- Civic references adapt: "Town Hall" → "Asamblea Pública"
+- Use "tú" forms for facilitator instructions (warm, direct, matching MV culture)
+- Keep sentence length short and vocabulary high-frequency — the Spanish facilitator may not be a trained teacher
+- Write exact scripts in Spanish (italicized in quotes), same level of specificity as English
+- Don't add content not in the source
+
+Mirror types:
+- Dual-product: Spanish Final Product complements the English one (for MV dual-language classrooms)
+- Straight mirror: same unit, Spanish delivery
+- Vocabulary-seed: mostly English with Spanish key terms and sentence stems woven in
+
+Output the Spanish version with the same structural depth as the English original.`;
+
+    const user = `Here is the English EfS unit content to mirror into Spanish:
+
+---
+${guide}
+---
+
+Mirror type: ${mirrorType || 'dual-product'}
+Output format: ${format || 'side-by-side bilingual'}
+${notes ? 'Cultural adaptation notes: ' + notes : ''}
+
+Produce the full Spanish bilingual mirror now. Adapt (don't just translate) where culture matters. Preserve all structural depth — lesson by lesson, segment by segment.`;
+
+    callClaude(system, user);
+  }
+</script>
+</body>
+</html>
